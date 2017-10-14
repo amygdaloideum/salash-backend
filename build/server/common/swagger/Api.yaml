@@ -1,0 +1,123 @@
+swagger: "2.0"
+info:
+  version: 1.0.0
+  title: salash-be
+  description: My cool app
+basePath: /api/v1
+tags:
+  - name: Examples
+    description: Simple example endpoints
+  - name: Specification
+    description: The swagger API specification
+
+consumes:
+  - application/json
+produces:
+  - application/json
+paths:
+  /recipes:
+    get:
+      tags:
+        - Recipes
+      summary: Find recipes by search criteria
+      parameters:
+        - name: ingredients
+          in: query
+          description: a list of required ingredients
+          type: array
+          items:
+            type: string
+        - name: categories
+          in: query
+          description: a list of required categories
+          type: array
+          items:
+            type: string
+        - name: author
+          in: query
+          description: the originator of the recipe
+          type: string
+        - name: limit
+          in: query
+          description: the maximum number of entries per page 
+          type: integer
+          default: 10
+          maximum: 200.0
+          minimum: 1.0
+        - name: page
+          in: query
+          description: the page number
+          type: integer
+          default: 1
+          minimum: 1
+      responses:
+        200:
+          description: successful operation
+          schema:
+            type: "array"
+            items:
+              $ref: "#/definitions/Recipe"
+        400:
+          description: service not found
+        500:
+          description: server error
+  /recipes/{id}:
+    get:
+      tags:
+        - Recipes
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: The id of the entity to retrieve
+          type: string
+      responses:
+        200:
+          description: Return the recipe with the specified id
+        404:
+          description: Example not
+  /spec:
+    get:
+      tags:
+        - Specification
+      responses:
+        200:
+          description: Return the API specification
+definitions:
+  Recipe:
+    type: object
+    required:
+      - cuid
+    properties:
+      cuid:
+        type: string
+        example: ciwuuaju90002dwla2ejeu2rz
+      title:
+        type: string
+        example: the five pound man salad
+      author:
+        $ref: "#/definitions/Author"
+  Author:
+    type: object
+    required:
+      - name
+    properties:
+      cuid:
+        type: string
+        example: ciwuuaju90002dwla2ejeu2ri
+      name: 
+        type: string
+        example: Yovana Mendoza
+      alias:
+        type: string
+        example: Rawvana
+      facebook:
+        type: string
+        example: https://www.facebook.com/rawvana/
+      instagram:
+        type: string
+        example: https://www.instagram.com/rawvana/
+      twitter:
+        type: string
+        example: https://twitter.com/rawvana 
+      
