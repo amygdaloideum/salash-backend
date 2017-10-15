@@ -1,12 +1,12 @@
 swagger: "2.0"
 info:
   version: 1.0.0
-  title: salash-be
-  description: My cool app
+  title: Salash
+  description: API for interacting with the Salash-backend
 basePath: /api/v1
 tags:
-  - name: Examples
-    description: Simple example endpoints
+  - name: Recipes
+  - name: Categories
   - name: Specification
     description: The swagger API specification
 
@@ -19,7 +19,7 @@ paths:
     get:
       tags:
         - Recipes
-      summary: Find recipes by search criteria
+      summary: find recipes by search criteria
       parameters:
         - name: ingredients
           in: query
@@ -54,17 +54,36 @@ paths:
         200:
           description: successful operation
           schema:
-            type: "array"
+            type: array
             items:
               $ref: "#/definitions/Recipe"
         400:
           description: service not found
         500:
           description: server error
+    post:
+      tags:
+        - Recipes
+      consumes:
+        - application/json
+      summary: add a new recipe to the database
+      parameters:
+      - in: body
+        name: body
+        description: Pet object that needs to be added to the store
+        required: true
+        schema:
+          $ref: "#/definitions/RecipesPostBody"
+      responses:
+        200:
+          description: successful operation
+          schema:
+            $ref: "#/definitions/Recipe"
   /recipes/{id}:
     get:
       tags:
         - Recipes
+      summary: get a recipe by id
       parameters:
         - name: id
           in: path
@@ -76,6 +95,49 @@ paths:
           description: Return the recipe with the specified id
         404:
           description: Example not
+    delete:
+      tags:
+        - Recipes
+      summary: deletes a recipe from the database
+      parameters:
+        - in: path
+          name: id
+          type: string
+          required: true
+          description: the id of the recipe to delete
+      responses:
+        200:
+          description: successful operation
+        400:
+          description: invalid ID supplied
+        404:
+          description: recipe not found
+    put:
+      tags:
+        - Recipes
+      summary: updates an existing recipe
+      parameters:
+        - in: body
+          name: body
+          description: and object with the fields that should be updated
+          schema:
+            $ref: "#/definitions/RecipesPostBody"
+      responses:
+        200:
+          description: successful operation
+        400:
+          description: invalid ID supplied
+        404:
+          description: recipe not found
+  /categories:
+    get:
+      tags:
+        - Categories
+      summary: get all categories
+      responses:
+        200:
+          description: sucessful operation
+        
   /spec:
     get:
       tags:
@@ -84,10 +146,55 @@ paths:
         200:
           description: Return the API specification
 definitions:
+  Recipes:
+    type: object
+    properties:
+      pagination:
+        $ref: "#/definitions/Pagination"
+      data:
+        type: array
+        items:
+          $ref: "#/definitions/Recipe"
+  RecipesPostBody:
+    type: object
+    required:
+      - title
+      - ingredients
+      - categories
+      - user
+    properties:
+      title:
+        type: string
+        example: flower power salad
+      user:
+        type: string
+        example: ciwuuaju90002dwla2ejeu2ri
+      ingredients:
+        type: array
+        items:
+          type: string
+          example: ciwuuaju90002dwla2ejeu3rt
+      categories:
+        type: array
+        items:
+          type: string
+          example: ciwuuaju90002dwla2ejeukjk
+      description:
+        type: string
+        example: Healthy quick colorful salad with kale
+      instructions:
+        type: string
+        example: chop the tomatoes and carrots finely and mix with the kale.
+      image:
+        type: string
+        example: http://images.com/image.jpg
+      author:
+        $ref: "#/definitions/Author"
   Recipe:
     type: object
     required:
       - cuid
+      - title
     properties:
       cuid:
         type: string
@@ -118,8 +225,7 @@ definitions:
       categories:
         type: array
         items:
-          type: string
-          example: gourmet
+          $ref: "#/definitions/Category"
       loves:
         type: integer
         example: 1
@@ -135,10 +241,25 @@ definitions:
         example: ciwuuaju90002dwla2ejeu2ri
       name:
         type: string
-        example: tomato
+        example: brazil nut
+      slug:
+        type: string
+        example: brazil-nut
       amount:
         type: string
         example: 2
+  Category:
+    type: object
+    properties:
+      id:
+        type: string
+        example: ciwuuaju90002dwla2ejeu2ri
+      name:
+        type: string
+        example: main course
+      slug:
+        type: string
+        example: main-course
   User:
     type: object
     properties:
@@ -179,4 +300,21 @@ definitions:
       twitter:
         type: string
         example: https://twitter.com/rawvana 
-      
+  Pagination:
+    type: object
+    properties:
+      itemsPerPage:
+        type: integer
+        example: 10
+      currentPage:
+        type: integer
+        example: 3
+      totalPages:
+        type: integer
+        example: 15
+      previousPage:
+        type: integer
+        example: 2
+      nextPage:
+        type: integer
+        example: 4
