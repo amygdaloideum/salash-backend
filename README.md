@@ -1,6 +1,6 @@
-# salash-be
+# salash-backend
 
-My cool app
+Salash is a raw food recipe hub that enables users to save, share and discover new culinary formulas!
 
 ## Install It
 ```
