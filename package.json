@@ -4,7 +4,7 @@
   "description": "My cool app",
   "main": "index.js",
   "scripts": {
-    "start": "cd build && node main",
+    "start": "npm run compile && cd build && node main",
     "compile": "node build.js && backpack build",
     "dev": "node build.js && backpack dev | pino -o 'short'",
     "debug": "node build.js && backpack dev --inspect | pino -o 'short'",
