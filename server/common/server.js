@@ -1,4 +1,5 @@
 import Express from 'express';
+import passport from 'passport';
 import * as path from 'path';
 import * as bodyParser from 'body-parser';
 import * as http from 'http';
@@ -6,6 +7,7 @@ import * as os from 'os';
 import cookieParser from 'cookie-parser';
 import swaggerify from './swagger';
 import l from './logger';
+import facebookStrategy from './auth/facebook';
 
 const app = new Express();
 
@@ -16,11 +18,14 @@ export default class ExpressServer {
     app.use(bodyParser.json());
     app.use(bodyParser.urlencoded({ extended: true }));
     app.use(cookieParser(process.env.SESSION_SECRET));
+    app.use(passport.initialize());
     app.use(Express.static(`${root}/public`));
+    passport.use(facebookStrategy);
   }
 
   router(routes) {
     swaggerify(app, routes);
+    //routes(app);
     return this;
   }
 

@@ -1,5 +1,5 @@
 import logger from '../../../common/logger';
-import driver from '../../utils/db-driver';
+import driver from '../../../common/db-driver';
 
 class RecipesService {
 
