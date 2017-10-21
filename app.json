@@ -1,0 +1,34 @@
+{
+  "name": "salash-backend",
+  "description": "raw food recipe hub that enables users to save, share and discover new culinary formulas",
+  "scripts": {
+  },
+  "env": {
+    "GRAPHENEDB_BOLT_PASSWORD": {
+      "required": true
+    },
+    "GRAPHENEDB_BOLT_URL": {
+      "required": true
+    },
+    "GRAPHENEDB_BOLT_USER": {
+      "required": true
+    },
+    "GRAPHENEDB_URL": {
+      "required": true
+    },
+    "LOGDNA_KEY": {
+      "required": true
+    }
+  },
+  "formation": {
+  },
+  "addons": [
+    "graphenedb",
+    "logdna"
+  ],
+  "buildpacks": [
+    {
+      "url": "heroku/nodejs"
+    }
+  ]
+}
