@@ -21,9 +21,13 @@ export default new FacebookStrategy(facebookConfig, (accessToken, refreshToken, 
       ON CREATE SET u.facebookName = "${profile.displayName}"
       ON CREATE SET u.facebookToken = "${accessToken}"
       ON CREATE SET u.username = "${profile.displayName}"
-      RETURN u
+      WITH u
+      OPTIONAL MATCH (u)-[:HAS]-(p:Permission)
+      RETURN u, COLLECT(p.name) AS permissions
     `).then(response => {
-        const user = response.records[0].get('u').properties;
+        const { id, username } = response.records[0].get('u').properties;
+        const permissions = response.records[0].get('permissions');
+        const user = { id, username, permissions };
         const token = signToken(user, process.env.JWT_SECRET);
         return done(null, { user, token });
       });

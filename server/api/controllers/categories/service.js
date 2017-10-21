@@ -1,5 +1,7 @@
 import logger from '../../../common/logger';
 import driver from '../../../common/db-driver';
+import cuid from 'cuid';
+import slug from 'limax';
 
 class CategoriesService {
 
@@ -14,6 +16,21 @@ class CategoriesService {
     .then(res => {
       session.close();
       return { categories: this.formatCategories(res.records) };
+    });
+  }
+
+  create(name) {
+    logger.info(`${this.constructor.name}.create()`);
+    const session = driver.session();
+    const params = {
+      id: cuid(),
+      name,
+      slug: slug(name),
+    };
+    return session.run(`CREATE (category:Category {id: {id}, name: {name}, slug: {slug}}) RETURN category`, params)
+    .then(res => {
+      session.close();
+      return res.records.get('category');
     });
   }
 }
