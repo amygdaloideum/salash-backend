@@ -3,6 +3,7 @@ import recipesRouter from './api/controllers/recipes/router';
 import categoriesRouter from './api/controllers/categories/router';
 import authRouter from './api/controllers/auth/router';
 import utilsRouter from './api/controllers/utils/router';
+import ingredientsRouter from './api/controllers/ingredients/router';
 
 export default function routes(app) {
   app.use('/api/v1/examples', examplesRouter);
@@ -10,4 +11,5 @@ export default function routes(app) {
   app.use('/api/v1/categories', categoriesRouter);
   app.use('/api/v1/auth', authRouter);
   app.use('/api/v1/utils', utilsRouter);
+  app.use('/api/v1/ingredients', ingredientsRouter);
 }

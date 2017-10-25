@@ -37,6 +37,33 @@ paths:
       responses:
         200:
           description: successful operation
+  /ingredients:
+    get:
+      tags:
+        - Ingredients
+      summary: gets ingredients based on name
+      parameters:
+        - name: name
+          in: query
+          description: the search term
+          type: string
+      responses:
+        200:
+          description: successful operation
+  /ingredients/{id}:
+    get:
+      tags:
+        - Ingredients
+      summary: gets full nutritional report based on ingredient id.
+      parameters:
+        - name: id
+          in: path
+          description: the ingredient id
+          required: true
+          type: string
+      responses:
+        200:
+          description: successful operation
   /recipes:
     get:
       tags:
