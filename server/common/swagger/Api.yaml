@@ -119,10 +119,9 @@ paths:
       parameters:
       - in: body
         name: body
-        description: Pet object that needs to be added to the store
+        description: post data
         required: true
-        schema:
-          $ref: "#/definitions/RecipesPostBody"
+        type: object
       responses:
         200:
           description: successful operation
@@ -208,9 +207,6 @@ definitions:
     type: object
     required:
       - title
-      - ingredients
-      - categories
-      - user
     properties:
       title:
         type: string

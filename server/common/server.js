@@ -24,8 +24,8 @@ export default class ExpressServer {
   }
 
   router(routes) {
-    swaggerify(app, routes);
-    //routes(app);
+    //swaggerify(app, routes);
+    routes(app);
     return this;
   }
 

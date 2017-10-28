@@ -14,19 +14,36 @@ class RecipesService {
     };
   }
 
-  create(recipe) {
-    const ingredientsQuery = recipe.ingredients.map((ingredient, index) => `
-      MERGE (i${index}:Ingredient { name:'${ingredient.name.toLowerCase()}'})
-      MERGE (recipe)-[:CONTAINS {amount: '${ingredient.amount}'}]->(i${index})
-    `).join('\n');
+  create(recipe, user) {
+    const standardIngredientsQuery = recipe.ingredients.map((entry, index) => 
+    `MATCH  (i${index}:Ingredient { id: '${entry.ingredient.value}'})
+    CREATE (recipe)-[:CONTAINS_INGREDIENT {amount: '${entry.amount}', unit: '${entry.unit}'}]->(i${index})`
+    ).join('\n');
 
-    const categoriesQuery = recipe.categories.map((category, index) => `
+    const customIngredientsQuery = recipe.customIngredients.map((entry, index) => 
+    `MERGE (ci${index}:CustomIngredient {id: '${entry.ingredient.value}'})
+    ON CREATE SET ci${index}.name = '${entry.ingredient.label}'
+    CREATE (user)-[:HAS_CUSTOM_INGREDIENT]->(ci${index})<-[:CONTAINS_CUSTOM_INGREDIENT {amount: '${entry.customAmount}'}]-(recipe)`
+    ).join('\n');
+
+    /*const categoriesQuery = recipe.categories.map((category, index) => `
       MERGE (c${index}:Category { name:'${category.name.toLowerCase()}'})
       MERGE (recipe)-[:IS]->(c${index})
-    `).join('\n');
+    `).join('\n');*/
 
+    const params = {
+      id: recipe.id,
+      createdAt: recipe.createdAt,
+      title: recipe.title,
+      slug: recipe.slug,
+      description: recipe.description,
+      instructions: recipe.instructions,
+      //thumbnailUrl: hasImage ? recipe.image.thumbnailUrl : '',
+      //image: recipe.image,
+    };
+    const session = driver.session();
     return session.run(`
-      MATCH (user:User {id: '${req.user.id}'})
+      MATCH (user:User {id: '${user.id}'})
       CREATE
         (recipe:Recipe {
           title: {title},
@@ -36,8 +53,9 @@ class RecipesService {
           id: {id}
         }),
         (user)-[:REGISTERED]->(recipe)
-    ${ingredientsQuery}
-    ${categoriesQuery}
+      WITH recipe, user
+      ${standardIngredientsQuery}
+      ${customIngredientsQuery}
     `, params)
       .then(res => {
         session.close();
