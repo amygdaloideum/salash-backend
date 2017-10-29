@@ -15,21 +15,30 @@ class RecipesService {
   }
 
   create(recipe, user) {
-    const standardIngredientsQuery = recipe.ingredients.map((entry, index) => 
-    `MATCH  (i${index}:Ingredient { id: '${entry.ingredient.value}'})
-    CREATE (recipe)-[:CONTAINS_INGREDIENT {amount: '${entry.amount}', unit: '${entry.unit}'}]->(i${index})`
-    ).join('\n');
+    const standardIngredientsQuery = recipe.ingredients.map((entry, index) => `
+      WITH recipe, user
+      MATCH  (i${index}:Ingredient { id: '${entry.ingredient.value}'})
+      CREATE (recipe)-[:CONTAINS_INGREDIENT {amount: '${entry.amount}', unit: '${entry.unit}'}]->(i${index})
+    `).join('\n');
 
-    const customIngredientsQuery = recipe.customIngredients.map((entry, index) => 
-    `MERGE (ci${index}:CustomIngredient {id: '${entry.ingredient.value}'})
-    ON CREATE SET ci${index}.name = '${entry.ingredient.label}'
-    CREATE (user)-[:HAS_CUSTOM_INGREDIENT]->(ci${index})<-[:CONTAINS_CUSTOM_INGREDIENT {amount: '${entry.customAmount}'}]-(recipe)`
-    ).join('\n');
+    const customIngredientsQuery = recipe.customIngredients.map((entry, index) => `
+      WITH recipe, user
+      MERGE (ci${index}:CustomIngredient {id: '${entry.ingredient.value}'})
+      ON CREATE SET ci${index}.name = '${entry.ingredient.label}'
+      CREATE (user)-[:HAS_CUSTOM_INGREDIENT]->(ci${index})<-[:CONTAINS_CUSTOM_INGREDIENT {amount: '${entry.customAmount}'}]-(recipe)
+    `).join('\n');
 
-    /*const categoriesQuery = recipe.categories.map((category, index) => `
-      MERGE (c${index}:Category { name:'${category.name.toLowerCase()}'})
-      MERGE (recipe)-[:IS]->(c${index})
-    `).join('\n');*/
+    const categoriesQuery = recipe.categories.map((category, index) => `
+      WITH recipe, user
+      MATCH (c${index}:Category { id:'${category.id}'})
+      MERGE (recipe)-[:HAS_CATEGORY]->(c${index})
+    `).join('\n');
+
+    const imageQuery = (recipe.image && recipe.image.id) ? `
+      WITH recipe, user
+      MATCH (img:Image {id: '${recipe.image.id}'})
+      CREATE (recipe)-[:CONTAINS_IMAGE]->(img)
+    ` : '';
 
     const params = {
       id: recipe.id,
@@ -53,9 +62,10 @@ class RecipesService {
           id: {id}
         }),
         (user)-[:REGISTERED]->(recipe)
-      WITH recipe, user
       ${standardIngredientsQuery}
       ${customIngredientsQuery}
+      ${categoriesQuery}
+      ${imageQuery}
     `, params)
       .then(res => {
         session.close();

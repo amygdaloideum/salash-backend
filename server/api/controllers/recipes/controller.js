@@ -54,7 +54,7 @@ export class Controller {
       thumbnailUrl: hasImage ? recipe.image.thumbnailUrl : '',
       image: recipe.image,
     };
-  
+    //res.status(200).end();
     RecipeService
       .create(cleanedRecipe, req.user)
       .then(r => {
