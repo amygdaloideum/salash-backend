@@ -13,7 +13,7 @@ export class Controller {
 
   byId(req, res) {
     RecipeService
-      .byId(req.params.id)
+      .byId(req.params.id, req.user)
       .then(r => {
         if (r) res.json(r);
         else res.status(404).end();
@@ -21,6 +21,18 @@ export class Controller {
         logger.error(err);
         res.status(500).end();
       });
+  }
+
+  getLatest(req, res) {
+    RecipeService
+    .getLatest()
+    .then(r => {
+      if (r) res.json(r);
+      else res.status(404).end();
+    }).catch(err => {
+      logger.error(err);
+      res.status(500).end();
+    });
   }
 
   create(req, res) {

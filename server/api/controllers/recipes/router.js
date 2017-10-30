@@ -6,5 +6,6 @@ const upload = multer();
 
 export default express
   .Router()
+  .get('/latest', controller.getLatest)
   .get('/:id', controller.byId)
   .post('/', authenticate, upload.single('image'), controller.create);
