@@ -5,7 +5,7 @@ class RecipesService {
 
   formatRecipeResponse(record) {
     const image = record.get('img');
-    return {
+    const formatted = {
       ...record.get('recipe').properties,
       ingredients: record.get('ingredients'),
       customIngredients: record.get('customIngredients'),
@@ -14,6 +14,15 @@ class RecipesService {
       loves: record.get('loves'),
       image: image ? image.properties : null,
     };
+
+    if(formatted.customIngredients.length === 1 && formatted.customIngredients[0].id === null){
+      formatted.customIngredients = [];
+    }
+    if(formatted.ingredients.length === 1 && formatted.ingredients[0].id === null){
+      formatted.ingredients = [];
+    }
+
+    return formatted;
   }
 
   create(recipe, user) {
