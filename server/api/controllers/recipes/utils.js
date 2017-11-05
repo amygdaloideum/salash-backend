@@ -16,7 +16,8 @@ const customIngredients = (recipe) => recipe.customIngredients.map((entry, index
   WITH recipe, user
   MERGE (ci${index}:CustomIngredient {id: '${entry.ingredient.value}'})
   ON CREATE SET ci${index}.name = '${entry.ingredient.label}'
-  CREATE (user)-[:HAS_CUSTOM_INGREDIENT]->(ci${index})<-[:CONTAINS_CUSTOM_INGREDIENT {amount: '${entry.customAmount}'}]-(recipe)
+  MERGE (user)-[hci:HAS_CUSTOM_INGREDIENT]->(ci${index})
+  MERGE (ci${index})<-[:CONTAINS_CUSTOM_INGREDIENT {amount: '${entry.customAmount}'}]-(recipe)
 `).join('\n');
 
 const categories = (recipe) => recipe.categories.map((category, index) => `
