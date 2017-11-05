@@ -1,55 +1,16 @@
 import logger from '../../../common/logger';
 import driver from '../../../common/db-driver';
+import { queries, formatRecipeResponse } from './utils';
+import ImagesService from '../images/service';
 
 class RecipesService {
 
-  formatRecipeResponse(record) {
-    const image = record.get('img');
-    const formatted = {
-      ...record.get('recipe').properties,
-      ingredients: record.get('ingredients'),
-      customIngredients: record.get('customIngredients'),
-      categories: record.get('categories').map(c => c.properties),
-      uploader: record.get('uploader'),
-      loves: record.get('loves'),
-      image: image ? image.properties : null,
-    };
-
-    if(formatted.customIngredients.length === 1 && formatted.customIngredients[0].id === null){
-      formatted.customIngredients = [];
-    }
-    if(formatted.ingredients.length === 1 && formatted.ingredients[0].id === null){
-      formatted.ingredients = [];
-    }
-
-    return formatted;
-  }
-
   create(recipe, user) {
-    const standardIngredientsQuery = recipe.ingredients.map((entry, index) => `
-      WITH recipe, user
-      MATCH  (i${index}:Ingredient { id: '${entry.ingredient.value}'})
-      CREATE (recipe)-[:CONTAINS_INGREDIENT {amount: '${entry.amount}', unit: '${entry.unit}'}]->(i${index})
-    `).join('\n');
 
-    const customIngredientsQuery = recipe.customIngredients.map((entry, index) => `
-      WITH recipe, user
-      MERGE (ci${index}:CustomIngredient {id: '${entry.ingredient.value}'})
-      ON CREATE SET ci${index}.name = '${entry.ingredient.label}'
-      CREATE (user)-[:HAS_CUSTOM_INGREDIENT]->(ci${index})<-[:CONTAINS_CUSTOM_INGREDIENT {amount: '${entry.customAmount}'}]-(recipe)
-    `).join('\n');
-
-    const categoriesQuery = recipe.categories.map((category, index) => `
-      WITH recipe, user
-      MATCH (c${index}:Category { id:'${category.id}'})
-      MERGE (recipe)-[:HAS_CATEGORY]->(c${index})
-    `).join('\n');
-
-    const imageQuery = (recipe.image && recipe.image.id) ? `
-      WITH recipe, user
-      MATCH (img:Image {id: '${recipe.image.id}'})
-      CREATE (recipe)-[:CONTAINS_IMAGE]->(img)
-    ` : '';
+    const standardIngredientsQuery = queries.standardIngredients(recipe);
+    const customIngredientsQuery = queries.customIngredients(recipe);
+    const categoriesQuery = queries.categories(recipe);
+    const imageQuery = queries.image(recipe);
 
     const params = {
       id: recipe.id,
@@ -58,8 +19,6 @@ class RecipesService {
       slug: recipe.slug,
       description: recipe.description,
       instructions: recipe.instructions,
-      //thumbnailUrl: hasImage ? recipe.image.thumbnailUrl : '',
-      //image: recipe.image,
     };
     const session = driver.session();
     return session.run(`
@@ -85,9 +44,89 @@ class RecipesService {
       });
   }
 
+  update(id, recipe, user) {
+    logger.info(`${this.constructor.name}.update(${id})`);
+    const standardIngredientsQuery = queries.standardIngredients(recipe);
+    const customIngredientsQuery = queries.customIngredients(recipe);
+    const categoriesQuery = queries.categories(recipe);
+    const imageQuery = queries.image(recipe);
+
+    const params = {
+      id,
+      createdAt: recipe.createdAt,
+      title: recipe.title,
+      slug: recipe.slug,
+      description: recipe.description,
+      instructions: recipe.instructions,
+    };
+    const session = driver.session();
+    return session.run(`
+      MATCH (user:User {id: '${user.id}'})
+      WITH user
+      MATCH (recipe:Recipe {id: {id}})
+      WITH user, recipe
+      SET recipe.title = {title}
+      SET recipe.description = {description}
+      SET recipe.instructions = {instructions}
+      SET recipe.slug = {slug}
+      ${standardIngredientsQuery}
+      ${customIngredientsQuery}
+      ${categoriesQuery}
+      ${imageQuery}
+    `, params)
+      .then(res => {
+        session.close();
+        return res.records.map(formatRecipeResponse)[0];
+      });
+  }
+
+  delete(id) {
+    logger.info(`${this.constructor.name}.delete(${id})`);
+    const session = driver.session();
+    const params = {
+      recipeId: id,
+    };
+    return session.run(`
+    MATCH (recipe:Recipe {id: {recipeId}})
+    WITH recipe
+    OPTIONAL MATCH (recipe)-[ci:CONTAINS_IMAGE]->(image:Image)
+    WITH recipe, image, image.cloudinaryId as imageId
+    DETACH DELETE recipe, image
+    RETURN imageId
+  `, params)
+    .then(res => {
+      session.close();
+      return res.records[0] ? res.records[0].get('imageId') : null;
+    })
+    .then(imageId => {
+      return ImagesService.deleteFromCloud(imageId);
+    });
+  }
+
+  // Just delete all existing ingredients and categories before saving new ones
+  deleteCatsAndIngredients(id) {
+    logger.info(`${this.constructor.name}.deleteCatsAndIngredients(${id})`);
+    const session = driver.session();
+    const params = {
+      recipeId: id,
+    };
+    return session.run(`
+      MATCH (recipe:Recipe {id: {recipeId}})
+      WITH recipe
+      OPTIONAL MATCH (recipe)-[categoryRelation:HAS_CATEGORY]->(:Category)
+      OPTIONAL MATCH (recipe)-[standardIngredientRelation:CONTAINS_INGREDIENT]->(:Ingredient)
+      OPTIONAL MATCH (recipe)-[customIngredientRelation:CONTAINS_CUSTOM_INGREDIENT]->(customIngredient:CustomIngredient)
+      DELETE categoryRelation, standardIngredientRelation, customIngredientRelation
+    `, params)
+      .then(res => {
+        session.close();
+        return {message: `categories and ingredients removed from recipe ${id}`};
+      });
+  }
+
   byId(id, user) {
     logger.info(`${this.constructor.name}.byId(${id})`);
-    user && user.id ? logger.info(`Requested by user ${user.username}, id: ${user.id})`) : logger.info(`Requested by anonymous)`);
+    user && user.id ? logger.info(`Requested by user ${user.username}, id: ${user.id})`) : logger.info(`Requested by anonymous`);
     const session = driver.session();
     const params = {
       recipeId: id,
@@ -115,7 +154,7 @@ class RecipesService {
     `, params)
       .then(res => {
         session.close();
-        return res.records.map(this.formatRecipeResponse)[0];
+        return res.records.map(formatRecipeResponse)[0];
       });
   }
 
@@ -146,7 +185,7 @@ class RecipesService {
     `)
       .then(res => {
         session.close();
-        return res.records.map(this.formatRecipeResponse);
+        return res.records.map(formatRecipeResponse);
       });
   }
 

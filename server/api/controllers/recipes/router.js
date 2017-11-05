@@ -1,6 +1,6 @@
 import * as express from 'express';
 import controller from './controller';
-import authenticate from '../../../common/auth/middleware';
+import { authenticate, isOwnerOfRecipe } from '../../../common/auth/middleware';
 import multer from 'multer';
 const upload = multer();
 
@@ -8,4 +8,6 @@ export default express
   .Router()
   .get('/latest', controller.getLatest)
   .get('/:id', controller.byId)
-  .post('/', authenticate, upload.single('image'), controller.create);
+  .post('/', authenticate, upload.single('image'), controller.create)
+  .put('/:id', authenticate, isOwnerOfRecipe, controller.update)
+  .delete('/:id', authenticate, isOwnerOfRecipe, controller.delete);
