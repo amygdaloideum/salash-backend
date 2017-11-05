@@ -130,7 +130,7 @@ class RecipesService {
     const session = driver.session();
     const params = {
       recipeId: id,
-      beholderId: user || null,
+      beholderId: user ? user.id : null,
     };
     return session.run(`
       MATCH (recipe:Recipe {id: {recipeId}})
@@ -141,12 +141,14 @@ class RecipesService {
       WITH recipe, categories, COLLECT({name: i.name, id: i.id, amount: a.amount, unit: a.unit}) as ingredients
       OPTIONAL MATCH (recipe)-[ca:CONTAINS_CUSTOM_INGREDIENT]->(ci:CustomIngredient)
       WITH recipe, categories, ingredients, COLLECT({name: ci.name, id: ci.id, amount: ca.amount}) as customIngredients
-      OPTIONAL MATCH (recipe)<-[reactions:REACTS {love: true}]-(:User)    
+      OPTIONAL MATCH (recipe)<-[likes:LIKES]-(:User)    
       OPTIONAL MATCH (recipe)<-[:REGISTERED]-(u:User)
       OPTIONAL MATCH (recipe)-[:CONTAINS_IMAGE]->(img:Image)
+      OPTIONAL MATCH (beholder:User {id: {beholderId}})
       RETURN recipe,
       {username: u.username, id: u.id} AS uploader,
-      COUNT(reactions) AS loves,
+      COUNT(likes) AS likes,
+      {like: EXISTS( (recipe)<-[:LIKES]-(beholder) )} AS interactions,
       ingredients,
       customIngredients,
       categories,
@@ -154,7 +156,7 @@ class RecipesService {
     `, params)
       .then(res => {
         session.close();
-        return res.records.map(formatRecipeResponse)[0];
+        return res.records.map(record => formatRecipeResponse(record, true))[0];
       });
   }
 
@@ -170,12 +172,12 @@ class RecipesService {
       WITH recipe, categories, COLLECT({name: i.name, id: i.id, amount: a.amount, unit: a.unit}) as ingredients
       OPTIONAL MATCH (recipe)-[ca:CONTAINS_CUSTOM_INGREDIENT]->(ci:CustomIngredient)
       WITH recipe, categories, ingredients, COLLECT({name: ci.name, id: ci.id, amount: ca.amount}) as customIngredients
-      OPTIONAL MATCH (recipe)<-[reactions:REACTS {love: true}]-(:User)    
+      OPTIONAL MATCH (recipe)<-[reactions:LIKES]-(:User)    
       OPTIONAL MATCH (recipe)<-[:REGISTERED]-(u:User)
       OPTIONAL MATCH (recipe)-[:CONTAINS_IMAGE]->(img:Image)
       RETURN recipe,
       {username: u.username, id: u.id} AS uploader,
-      COUNT(reactions) AS loves,
+      COUNT(reactions) AS likes,
       ingredients,
       customIngredients,
       categories,

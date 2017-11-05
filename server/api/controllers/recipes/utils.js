@@ -80,10 +80,13 @@ export function formatRecipeResponse(record) {
     customIngredients: record.get('customIngredients'),
     categories: record.get('categories').map(c => c.properties),
     uploader: record.get('uploader'),
-    loves: record.get('loves'),
+    likes: record.get('likes').low,
     image: image ? image.properties : null,
   };
 
+  if(record.has('interactions')) {
+    formatted.interactions = record.get('interactions');
+  }
   if(formatted.customIngredients.length === 1 && formatted.customIngredients[0].id === null){
     formatted.customIngredients = [];
   }
